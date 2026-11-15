@@ -36,6 +36,15 @@ app.add_middleware(
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Auto-load .env file if present
+for env_candidate in [os.path.join(BASE_DIR, ".env"), os.path.join(os.path.dirname(BASE_DIR), ".env")]:
+    if os.path.exists(env_candidate):
+        with open(env_candidate, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#") and "=" in line:
+                    k, v = line.strip().split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 LR_PIPELINE_PATH = os.path.join(BASE_DIR, "uncart_pipeline.joblib")
 RF_PIPELINE_PATH = os.path.join(BASE_DIR, "uncart_rf_pipeline.joblib")
 METRICS_PATH = os.path.join(BASE_DIR, "model_metrics.json")
@@ -183,6 +192,7 @@ class PolicyRAGRetriever:
         return [item[1] for item in scored_chunks[:max_chunks]]
 
 rag_retriever = PolicyRAGRetriever(POLICY_PATH)
+CACHED_WORKING_MODEL = "models/gemini-flash-lite-latest"
 
 # -------------------------------------------------------------
 # 4. Helper: Real-Time SHAP Linear Feature Attribution
@@ -377,22 +387,39 @@ def investigate_order_rag(req: InvestigateRequest):
     )
 
     # 3. GENERATE Advice (Gemini API or Reliable Grounded Fallback)
+    global CACHED_WORKING_MODEL
     gemini_key = os.getenv("GEMINI_API_KEY")
     ai_advice = None
 
     if gemini_key:
-        try:
-            headers = {
-                "Content-Type": "application/json",
-                "x-goog-api-key": gemini_key.strip()
-            }
-            payload = {
-                "contents": [
-                    {"role": "user", "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}
-                ]
-            }
-            # Step 1: Query Google to find exact models available for this API key
-            target_model = None
+        print(f"[RAG] GEMINI_API_KEY detected! (Prefix: {gemini_key.strip()[:6]}...). Initiating Gemini call...")
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": gemini_key.strip()
+        }
+        payload = {
+            "contents": [
+                {"role": "user", "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}
+            ]
+        }
+
+        # Step A: Fast-path — Try cached working model first (sub-second latency)
+        if CACHED_WORKING_MODEL:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/{CACHED_WORKING_MODEL}:generateContent?key={gemini_key.strip()}"
+                res = requests.post(url, json=payload, headers=headers, timeout=10)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
+                        print(f"[RAG] Fast-path Gemini succeeded with {CACHED_WORKING_MODEL}!")
+            except Exception as e_fast:
+                print(f"[RAG] Fast-path {CACHED_WORKING_MODEL} failed ({e_fast}). Re-discovering models...")
+
+        # Step B: Fallback discovery if fast-path failed or was not cached
+        if not ai_advice:
+            raw_models = []
             try:
                 list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key.strip()}"
                 list_res = requests.get(list_url, headers=headers, timeout=5)
@@ -401,40 +428,33 @@ def investigate_order_rag(req: InvestigateRequest):
                     for m in models_list:
                         methods = m.get("supportedGenerationMethods", [])
                         if "generateContent" in methods:
-                            name = m.get("name", "")
-                            if "flash" in name or "pro" in name:
-                                target_model = name
-                                break
-                    if not target_model and models_list:
-                        target_model = models_list[0].get("name", "")
-                    print(f"[RAG] Auto-detected Google model for key: {target_model}")
+                            raw_models.append(m.get("name", ""))
             except Exception as e_list:
                 print(f"[RAG] Model list query error: {e_list}")
 
-            # Step 2: Call target model or reliable standard endpoints
-            candidate_urls = []
-            if target_model:
-                candidate_urls.append(f"https://generativelanguage.googleapis.com/v1beta/{target_model}:generateContent?key={gemini_key.strip()}")
-            candidate_urls.extend([
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key={gemini_key.strip()}",
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key={gemini_key.strip()}",
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={gemini_key.strip()}"
-            ])
+            # Prioritize flash-lite and flash models
+            flash_lite = [m for m in raw_models if "flash-lite" in m]
+            flash_models = [m for m in raw_models if "flash" in m and "flash-lite" not in m and "preview" not in m]
+            standard = [m for m in raw_models if "gemini" in m and "deep" not in m]
+            candidate_models = flash_lite + flash_models + [m for m in standard if m not in (flash_lite + flash_models)]
 
-            for url in candidate_urls:
-                res = requests.post(url, json=payload, headers=headers, timeout=8)
-                if res.status_code == 200:
-                    data = res.json()
-                    candidates = data.get("candidates", [])
-                    if candidates and "content" in candidates[0]:
-                        ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
-                        print(f"[RAG] Gemini LLM Generation Succeeded with {url.split('/models/')[1].split(':')[0]}!")
-                        break
-                else:
-                    m_tag = url.split('/models/')[1].split(':')[0] if '/models/' in url else url
-                    print(f"[RAG] Attempt on {m_tag} returned HTTP {res.status_code}: {res.text[:100]}")
-        except Exception as e:
-            print(f"[RAG] Gemini call exception: {e}")
+            for model_name in candidate_models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/{model_name}:generateContent?key={gemini_key.strip()}"
+                    res = requests.post(url, json=payload, headers=headers, timeout=10)
+                    if res.status_code == 200:
+                        data = res.json()
+                        candidates = data.get("candidates", [])
+                        if candidates and "content" in candidates[0]:
+                            ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
+                            CACHED_WORKING_MODEL = model_name  # Update cache
+                            print(f"[RAG] Discovered and cached new working model: {model_name}!")
+                            break
+                    else:
+                        print(f"[RAG] Model {model_name} returned HTTP {res.status_code}")
+                except Exception as e_post:
+                    print(f"[RAG] Model {model_name} failed: {e_post}")
+                    continue
 
     # Factual, grounded fallback if API key is not present (Demo-safe)
     if not ai_advice:
