@@ -383,17 +383,26 @@ def investigate_order_rag(req: InvestigateRequest):
     if gemini_key:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": gemini_key.strip()
+            }
             payload = {
                 "contents": [
                     {"role": "user", "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}
                 ]
             }
-            res = requests.post(url, json=payload, timeout=5)
+            res = requests.post(url, json=payload, headers=headers, timeout=10)
             if res.status_code == 200:
                 data = res.json()
-                ai_advice = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                candidates = data.get("candidates", [])
+                if candidates and "content" in candidates[0]:
+                    ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
+                    print(f"[RAG] Gemini LLM Generation Succeeded!")
+            else:
+                print(f"[RAG] Gemini API returned HTTP {res.status_code}: {res.text}")
         except Exception as e:
-            print(f"[RAG] Gemini call failed, falling back to local synthesis: {e}")
+            print(f"[RAG] Gemini call exception: {e}")
 
     # Factual, grounded fallback if API key is not present (Demo-safe)
     if not ai_advice:
