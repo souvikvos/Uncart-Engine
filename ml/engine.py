@@ -391,13 +391,37 @@ def investigate_order_rag(req: InvestigateRequest):
                     {"role": "user", "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}
                 ]
             }
-            # Try official endpoints in priority order (v1 GA, v1beta latest, v1beta 2.0-flash)
-            endpoints = [
-                f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={gemini_key.strip()}",
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key.strip()}",
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key.strip()}"
-            ]
-            for url in endpoints:
+            # Step 1: Query Google to find exact models available for this API key
+            target_model = None
+            try:
+                list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key.strip()}"
+                list_res = requests.get(list_url, headers=headers, timeout=5)
+                if list_res.status_code == 200:
+                    models_list = list_res.json().get("models", [])
+                    for m in models_list:
+                        methods = m.get("supportedGenerationMethods", [])
+                        if "generateContent" in methods:
+                            name = m.get("name", "")
+                            if "flash" in name or "pro" in name:
+                                target_model = name
+                                break
+                    if not target_model and models_list:
+                        target_model = models_list[0].get("name", "")
+                    print(f"[RAG] Auto-detected Google model for key: {target_model}")
+            except Exception as e_list:
+                print(f"[RAG] Model list query error: {e_list}")
+
+            # Step 2: Call target model or reliable standard endpoints
+            candidate_urls = []
+            if target_model:
+                candidate_urls.append(f"https://generativelanguage.googleapis.com/v1beta/{target_model}:generateContent?key={gemini_key.strip()}")
+            candidate_urls.extend([
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key={gemini_key.strip()}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key={gemini_key.strip()}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={gemini_key.strip()}"
+            ])
+
+            for url in candidate_urls:
                 res = requests.post(url, json=payload, headers=headers, timeout=8)
                 if res.status_code == 200:
                     data = res.json()
@@ -407,7 +431,8 @@ def investigate_order_rag(req: InvestigateRequest):
                         print(f"[RAG] Gemini LLM Generation Succeeded with {url.split('/models/')[1].split(':')[0]}!")
                         break
                 else:
-                    print(f"[RAG] Attempt on {url.split('/models/')[1].split(':')[0]} returned HTTP {res.status_code}: {res.text[:120]}")
+                    m_tag = url.split('/models/')[1].split(':')[0] if '/models/' in url else url
+                    print(f"[RAG] Attempt on {m_tag} returned HTTP {res.status_code}: {res.text[:100]}")
         except Exception as e:
             print(f"[RAG] Gemini call exception: {e}")
 
