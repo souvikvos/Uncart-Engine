@@ -1,0 +1,58 @@
+{
+  "primary_model": {
+    "model_name": "Logistic Regression (ML_29)",
+    "accuracy": 0.7317,
+    "precision": 0.7515,
+    "recall": 0.7652,
+    "f1_score": 0.7583,
+    "roc_auc": 0.8086,
+    "confusion_matrix": [
+      [
+        373,
+        167
+      ],
+      [
+        155,
+        505
+      ]
+    ]
+  },
+  "benchmark_model": {
+    "model_name": "Random Forest Classifier (Benchmark)",
+    "accuracy": 0.7292,
+    "precision": 0.7304,
+    "recall": 0.8045,
+    "f1_score": 0.7657,
+    "roc_auc": 0.798,
+    "confusion_matrix": [
+      [
+        344,
+        196
+      ],
+      [
+        129,
+        531
+      ]
+    ]
+  },
+  "features_used": [
+    "customer_age_days",
+    "past_orders_count",
+    "customer_past_return_rate",
+    "product_price",
+    "discount_percent",
+    "item_quantity",
+    "product_category_Beauty",
+    "product_category_Electronics",
+    "product_category_Footwear",
+    "product_category_Home & Kitchen",
+    "payment_method_Credit Card",
+    "payment_method_Debit Card",
+    "payment_method_UPI",
+    "delivery_tier_Tier 2",
+    "delivery_tier_Tier 3",
+    "is_festive_sale_1"
+  ],
+  "test_set_size": 1200,
+  "intercept": 1.9584
+}

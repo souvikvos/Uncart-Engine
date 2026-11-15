@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UNCart - Clean System Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+      padding: 30px 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .badge {
+      display: inline-flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .tag {
+      background: #1e293b;
+      color: #93c5fd;
+      border: 1px solid #334155;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .card-container {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 25px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8);
+      max-width: 1150px;
+      width: 100%;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+    .mermaid {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .legend {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      max-width: 900px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+    .dot-client { background: #0284c7; }
+    .dot-backend { background: #059669; }
+    .dot-db { background: #d97706; }
+    .dot-ml { background: #7c3aed; }
+    .dot-llm { background: #e11d48; }
+
+    .btn {
+      margin-top: 25px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #0369a1;
+    }
+    @media print {
+      body { background: white; color: black; padding: 0; }
+      .card-container { border: none; box-shadow: none; background: white; }
+      .btn { display: none; }
+      .header h1 { color: #0284c7; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>UNCart — System Architecture</h1>
+    <p>E-commerce Return Intelligence Platform (Project ID: ML_29)</p>
+    <div class="badge">
+      <span class="tag">Decoupled Microservice</span>
+      <span class="tag">Explainable AI (SHAP)</span>
+      <span class="tag">Grounded RAG Agent</span>
+    </div>
+  </div>
+
+  <div class="card-container">
+    <div class="mermaid">
+flowchart TD
+    %% TIER 1: FRONTEND
+    subgraph Tier1 ["1. PRESENTATION TIER (React + Tailwind CSS)"]
+        direction LR
+        UI_Tester["Live Order Simulator"]
+        UI_Upload["Batch CSV Uploader"]
+        UI_Analytics["Executive Dashboard (Recharts)"]
+        UI_XAI["SHAP Waterfall Visualizer"]
+        UI_Copilot["AI Mitigation Inspector"]
+    end
+
+    %% TIER 2: GATEWAY & BACKEND
+    subgraph Tier2 ["2. APPLICATION & GATEWAY TIER (Node.js + Express.js)"]
+        direction LR
+        GW["Express API Gateway"]
+        CSV["Stream Ingestion Engine (Multer)"]
+        Analytics["Business Aggregation Engine"]
+        Proxy["AI Inference Client Proxy"]
+        
+        GW --> CSV
+        GW --> Analytics
+        GW --> Proxy
+    end
+
+    %% TIER 3: DATA PERSISTENCE
+    subgraph Tier3 ["3. DATA PERSISTENCE (MongoDB Atlas)"]
+        direction LR
+        Coll_Orders[("Orders & Ingested Batches")]
+        Coll_Preds[("Predictions & SHAP Scores")]
+        Coll_Policies[("Store Policy Corpus SOP-2026")]
+    end
+
+    %% TIER 4: AI & ML INFERENCE ENGINE
+    subgraph Tier4 ["4. INTELLIGENCE & ML TIER (Python + FastAPI)"]
+        direction LR
+        Preproc["ColumnTransformer Preprocessor"]
+        
+        subgraph Models ["Dual Classification Engine"]
+            direction TB
+            LR["Primary: Logistic Regression (ML_29)"]
+            RF["Benchmark: Random Forest"]
+        end
+        
+        SHAP["SHAP LinearExplainer (XAI)"]
+        RAG["RAG Prompt Synthesizer"]
+        
+        Preproc --> Models
+        Models --> SHAP
+        SHAP --> RAG
+    end
+
+    %% TIER 5: FOUNDATION MODEL
+    subgraph Tier5 ["5. FOUNDATION MODEL TIER"]
+        LLM["External LLM Provider (Gemini / OpenAI / LLaMA)"]
+    end
+
+    %% TIER-TO-TIER DATA FLOWS
+    Tier1 ==>|"HTTPS / REST API (JSON)"| GW
+    
+    Tier2 <===>|"Mongoose ODM (Read/Write)"| Tier3
+    
+    Proxy ==>|"Internal HTTP (POST /predict & /investigate)"| Preproc
+    
+    RAG ==>|"Grounded Prompt (Policy + SHAP Vectors)"| LLM
+    LLM -.->|"Synthesized Action Plan"| Proxy
+
+    %% STYLING CLASSES
+    classDef clientStyle fill:#0369a1,stroke:#38bdf8,stroke-width:1px,color:#ffffff;
+    classDef backendStyle fill:#065f46,stroke:#34d399,stroke-width:1px,color:#ffffff;
+    classDef dbStyle fill:#92400e,stroke:#fbbf24,stroke-width:1px,color:#ffffff;
+    classDef mlStyle fill:#5b21b6,stroke:#a78bfa,stroke-width:1px,color:#ffffff;
+    classDef llmStyle fill:#9f1239,stroke:#fb7185,stroke-width:1px,color:#ffffff;
+
+    class UI_Tester,UI_Upload,UI_Analytics,UI_XAI,UI_Copilot clientStyle;
+    class GW,CSV,Analytics,Proxy backendStyle;
+    class Coll_Orders,Coll_Preds,Coll_Policies dbStyle;
+    class Preproc,LR,RF,SHAP,RAG mlStyle;
+    class LLM llmStyle;
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot dot-client"></div> Presentation (React)</div>
+    <div class="legend-item"><div class="dot dot-backend"></div> Backend Gateway (Express)</div>
+    <div class="legend-item"><div class="dot dot-db"></div> Persistence (MongoDB)</div>
+    <div class="legend-item"><div class="dot dot-ml"></div> AI / ML Engine (FastAPI)</div>
+    <div class="legend-item"><div class="dot dot-llm"></div> Foundation LLM</div>
+  </div>
+
+  <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#090d16',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '13px',
+        primaryTextColor: '#f8fafc',
+        lineColor: '#38bdf8'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis',
+        rankSpacing: 45,
+        nodeSpacing: 25
+      }
+    });
+  </script>
+</body>
+</html>

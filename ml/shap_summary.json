@@ -1,0 +1,68 @@
+{
+  "global_importance": [
+    {
+      "feature": "customer_past_return_rate",
+      "importance": 0.6079
+    },
+    {
+      "feature": "payment_method_UPI",
+      "importance": 0.5591
+    },
+    {
+      "feature": "product_category_Beauty",
+      "importance": 0.5497
+    },
+    {
+      "feature": "payment_method_Credit Card",
+      "importance": 0.5362
+    },
+    {
+      "feature": "product_category_Home & Kitchen",
+      "importance": 0.5159
+    },
+    {
+      "feature": "item_quantity",
+      "importance": 0.3378
+    },
+    {
+      "feature": "product_category_Electronics",
+      "importance": 0.3341
+    },
+    {
+      "feature": "payment_method_Debit Card",
+      "importance": 0.3289
+    },
+    {
+      "feature": "customer_age_days",
+      "importance": 0.1644
+    },
+    {
+      "feature": "discount_percent",
+      "importance": 0.1557
+    },
+    {
+      "feature": "is_festive_sale_1",
+      "importance": 0.1436
+    },
+    {
+      "feature": "product_category_Footwear",
+      "importance": 0.1201
+    },
+    {
+      "feature": "delivery_tier_Tier 3",
+      "importance": 0.1053
+    },
+    {
+      "feature": "delivery_tier_Tier 2",
+      "importance": 0.0419
+    },
+    {
+      "feature": "past_orders_count",
+      "importance": 0.0163
+    },
+    {
+      "feature": "product_price",
+      "importance": 0.0123
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# UNCart Store Return & Refund Operating Policy (SOP-2026)
+
+## Section 1: Standard Return Windows & Category Restrictions
+1.1 Standard items (Home & Kitchen, Footwear) may be returned within 14 calendar days of delivery.
+1.2 Apparel items carry a strict 7-day return window to mitigate seasonal wardrobe cycling.
+1.3 Electronics and high-value accessories must be inspected upon delivery. Returns for open-box electronics are permitted only if verified defective within 72 hours.
+1.4 Consumables, intimate apparel, and personal care/beauty items are strictly non-returnable once the factory seal is broken.
+
+## Section 2: Cash on Delivery (COD) & Return-to-Origin (RTO) Mitigation
+2.1 Cash on Delivery orders incur an average fulfillment loss of ₹180-₹350 in forward and reverse logistics when rejected at the doorstep.
+2.2 Orders marked with High Return Risk (>65%) that select Cash on Delivery must be held for automated SMS or WhatsApp OTP verification prior to warehouse packaging.
+2.3 If a customer with a historical return rate exceeding 40% places a COD order exceeding ₹2,500, customer support is advised to offer an instant prepaid discount (e.g., 5% off via UPI) to convert the order to prepaid and eliminate RTO risk.
+
+## Section 3: Sizing & Wardrobing Prevention (Multi-Item Apparel)
+3.1 Customers ordering multiple items of the identical apparel SKU (item_quantity >= 2 in Apparel or Footwear) represent a 70%+ statistical likelihood of returning at least one variant ("wardrobing").
+3.2 Operations should proactively reach out via automated messaging providing exact chest/waist sizing dimension charts and fit assistance before shipping all variants.
+
+## Section 4: Deep Discount & Festive Sale Thresholds
+4.1 During festive or flash sales (is_festive_sale = 1), impulse purchase return rates surge by up to 25%.
+4.2 Items purchased at deep discounts (>40% discount) are eligible for store credit replacement only, rather than direct cash refunds to the source payment method.
+
+## Section 5: Repeat Returner & High Risk Customer Management
+5.1 For customers with historical return rates exceeding 50%, free return shipping is suspended; reverse pickup fees of ₹100 will be deducted from the refund.
+5.2 High-risk orders originating from Tier 3 delivery zones must have phone number and PIN code validity confirmed prior to courier dispatch.
+

@@ -1,0 +1,34 @@
+{
+  "numerical": [
+    "customer_age_days",
+    "past_orders_count",
+    "customer_past_return_rate",
+    "product_price",
+    "discount_percent",
+    "item_quantity"
+  ],
+  "categorical": [
+    "product_category",
+    "payment_method",
+    "delivery_tier",
+    "is_festive_sale"
+  ],
+  "encoded_all": [
+    "customer_age_days",
+    "past_orders_count",
+    "customer_past_return_rate",
+    "product_price",
+    "discount_percent",
+    "item_quantity",
+    "product_category_Beauty",
+    "product_category_Electronics",
+    "product_category_Footwear",
+    "product_category_Home & Kitchen",
+    "payment_method_Credit Card",
+    "payment_method_Debit Card",
+    "payment_method_UPI",
+    "delivery_tier_Tier 2",
+    "delivery_tier_Tier 3",
+    "is_festive_sale_1"
+  ]
+}
