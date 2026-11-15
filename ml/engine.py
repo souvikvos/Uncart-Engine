@@ -382,7 +382,6 @@ def investigate_order_rag(req: InvestigateRequest):
 
     if gemini_key:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
             headers = {
                 "Content-Type": "application/json",
                 "x-goog-api-key": gemini_key.strip()
@@ -392,15 +391,23 @@ def investigate_order_rag(req: InvestigateRequest):
                     {"role": "user", "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}
                 ]
             }
-            res = requests.post(url, json=payload, headers=headers, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                candidates = data.get("candidates", [])
-                if candidates and "content" in candidates[0]:
-                    ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
-                    print(f"[RAG] Gemini LLM Generation Succeeded!")
-            else:
-                print(f"[RAG] Gemini API returned HTTP {res.status_code}: {res.text}")
+            # Try official endpoints in priority order (v1 GA, v1beta latest, v1beta 2.0-flash)
+            endpoints = [
+                f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={gemini_key.strip()}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key.strip()}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key.strip()}"
+            ]
+            for url in endpoints:
+                res = requests.post(url, json=payload, headers=headers, timeout=8)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        ai_advice = candidates[0]["content"]["parts"][0]["text"].strip()
+                        print(f"[RAG] Gemini LLM Generation Succeeded with {url.split('/models/')[1].split(':')[0]}!")
+                        break
+                else:
+                    print(f"[RAG] Attempt on {url.split('/models/')[1].split(':')[0]} returned HTTP {res.status_code}: {res.text[:120]}")
         except Exception as e:
             print(f"[RAG] Gemini call exception: {e}")
 
